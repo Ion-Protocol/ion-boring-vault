@@ -42,14 +42,21 @@ contract EtherFiLiquidDecoderAndSanitizer is
     /**
      * @notice BalancerV2, ERC4626, and Curve all specify a `deposit(uint256,address)`,
      *         all cases are handled the same way.
+     * @dev To use maxAvailable logic, append
+     *      abi.encodePacked(TOKEN ADDRESS, MAX_AVAILABLE_MARKER) to the end of calldata.
      */
-    function deposit(uint256, address receiver)
+    function deposit(uint256 amount, address receiver)
         external
-        pure
+        view
         override(BalancerV2DecoderAndSanitizer, ERC4626DecoderAndSanitizer, CurveDecoderAndSanitizer)
         returns (bytes memory addressesFound, bytes memory targetData)
     {
-        targetData = msg.data;
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            amount = _maxAvailableFromOffset(64, amount);
+            targetData = abi.encodeWithSelector(ERC4626DecoderAndSanitizer.deposit.selector, amount, receiver);
+        } else {
+            targetData = msg.data;
+        }
         addressesFound = abi.encodePacked(receiver);
     }
 
@@ -70,9 +77,9 @@ contract EtherFiLiquidDecoderAndSanitizer is
      * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
-    function withdraw(uint256)
+    function withdraw(uint256 amount)
         external
-        pure
+        view
         override(
             BalancerV2DecoderAndSanitizer,
             CurveDecoderAndSanitizer,
@@ -81,7 +88,12 @@ contract EtherFiLiquidDecoderAndSanitizer is
         )
         returns (bytes memory addressesFound, bytes memory targetData)
     {
-        targetData = msg.data;
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            amount = _maxAvailableFromOffset(64, amount);
+            targetData = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.withdraw.selector, amount);
+        } else {
+            targetData = msg.data;
+        }
     }
 
     /**

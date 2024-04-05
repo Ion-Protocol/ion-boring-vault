@@ -23,6 +23,12 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
 
     //============================== UNISWAP V3 ===============================
 
+    /**
+     * @dev maxAvailable logic is not supported for exactInput.
+     *      This would mean the params input needs to be memory instead of
+     *      calldata, so that we can modify the params, but doing so makes the
+     *      address extraction much more gas intensive.
+     */
     function exactInput(DecoderCustomTypes.ExactInputParams calldata params)
         external
         pure
@@ -44,18 +50,32 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         addressesFound = abi.encodePacked(addressesFound, params.recipient);
     }
 
-    function mint(DecoderCustomTypes.MintParams calldata params)
+    /**
+     * @dev To use maxAvailable logic, append
+     *      abi.encodePacked(MAX_AVAILABLE_MARKER) to the end of calldata.
+     */
+    function mint(DecoderCustomTypes.MintParams memory params)
         external
-        pure
+        view
         virtual
         returns (bytes memory addressesFound, bytes memory targetData)
     {
-        targetData = msg.data;
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            params.amount0Desired = _maxAvailable(params.token0, params.amount0Desired);
+            params.amount1Desired = _maxAvailable(params.token1, params.amount1Desired);
+            targetData = abi.encodeWithSelector(this.mint.selector, params);
+        } else {
+            targetData = msg.data;
+        }
         // Return addresses found
         addressesFound = abi.encodePacked(params.token0, params.token1, params.recipient);
     }
 
-    function increaseLiquidity(DecoderCustomTypes.IncreaseLiquidityParams calldata params)
+    /**
+     * @dev To use maxAvailable logic, append
+     *      abi.encodePacked(MAX_AVAILABLE_MARKER) to the end of calldata.
+     */
+    function increaseLiquidity(DecoderCustomTypes.IncreaseLiquidityParams memory params)
         external
         view
         virtual
@@ -65,14 +85,28 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
-        targetData = msg.data;
+
         // Extract addresses from uniswapV3NonFungiblePositionManager.positions(params.tokenId).
         (, address operator, address token0, address token1,,,,,,,,) =
             uniswapV3NonFungiblePositionManager.positions(params.tokenId);
+
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            params.amount0Desired = _maxAvailable(token0, params.amount0Desired);
+            params.amount1Desired = _maxAvailable(token1, params.amount1Desired);
+            targetData = abi.encodeWithSelector(this.increaseLiquidity.selector, params);
+        } else {
+            targetData = msg.data;
+        }
+
         addressesFound = abi.encodePacked(operator, token0, token1);
     }
 
-    function decreaseLiquidity(DecoderCustomTypes.DecreaseLiquidityParams calldata params)
+    /**
+     * @dev To use maxAvailable logic, append
+     *      abi.encodePacked(MAX_AVAILABLE_MARKER) to the end of calldata.
+     * @dev Note liquidity should be uint128 max.
+     */
+    function decreaseLiquidity(DecoderCustomTypes.DecreaseLiquidityParams memory params)
         external
         view
         virtual
@@ -84,10 +118,19 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
-
-        targetData = msg.data;
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            if (params.liquidity == type(uint128).max) {
+                (,,,,,,, params.liquidity,,,,) = uniswapV3NonFungiblePositionManager.positions(params.tokenId);
+            }
+            targetData = abi.encodeWithSelector(this.decreaseLiquidity.selector, params);
+        } else {
+            targetData = msg.data;
+        }
     }
 
+    /**
+     * @dev maxAvailable logic is not supported for collect.
+     */
     function collect(DecoderCustomTypes.CollectParams calldata params)
         external
         view

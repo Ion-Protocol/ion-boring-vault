@@ -23,7 +23,7 @@ import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthorit
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
+contract ManagerWithMerkleVerificationMaxAvailableTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -131,8 +131,14 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targets[1] = address(USDT);
 
         bytes[] memory targetData = new bytes[](2);
-        targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, usdcSpender, 777);
-        targetData[1] = abi.encodeWithSelector(ERC20.approve.selector, usdtTo, 777);
+        targetData[0] = bytes.concat(
+            abi.encodeWithSelector(ERC20.approve.selector, usdcSpender, 777),
+            abi.encodePacked(USDC, MAX_AVAILABLE_MARKER)
+        );
+        targetData[1] = bytes.concat(
+            abi.encodeWithSelector(ERC20.approve.selector, usdtTo, type(uint256).max),
+            abi.encodePacked(USDT, MAX_AVAILABLE_MARKER)
+        );
 
         (bytes32[][] memory manageProofs) = _getProofsUsingTree(leafs, manageTree);
 
@@ -323,7 +329,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             recipient: address(boringVault),
             toInternalBalance: false
         });
-        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+
+        targetData[1] = bytes.concat(
+            abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
+        );
         targetData[2] = abi.encodeWithSignature("approve(address,uint256)", vault, type(uint256).max);
         DecoderCustomTypes.JoinPoolRequest memory joinRequest = DecoderCustomTypes.JoinPoolRequest({
             assets: new address[](2),
@@ -333,23 +343,38 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         });
         joinRequest.assets[0] = address(RETH);
         joinRequest.assets[1] = address(WETH);
-        joinRequest.maxAmountsIn[0] = 100e18;
-        joinRequest.maxAmountsIn[1] = 100e18;
-        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [100e18,100e18], 0
-        targetData[3] = abi.encodeWithSelector(
-            BalancerV2DecoderAndSanitizer.joinPool.selector,
-            poolId,
-            address(boringVault),
-            address(boringVault),
-            joinRequest
+        joinRequest.maxAmountsIn[0] = type(uint256).max;
+        joinRequest.maxAmountsIn[1] = type(uint256).max;
+        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [RETH BALANCE, WETH BALANCE], 0
+        targetData[3] = bytes.concat(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.joinPool.selector,
+                poolId,
+                address(boringVault),
+                address(boringVault),
+                joinRequest
+            ),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
         );
         targetData[4] = abi.encodeWithSignature("approve(address,uint256)", rETH_wETH_gauge, type(uint256).max);
-        targetData[5] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
-        targetData[6] = abi.encodeWithSignature("withdraw(uint256)", 203690537881715311640, address(boringVault));
+        targetData[5] = bytes.concat(
+            abi.encodeWithSignature("deposit(uint256,address)", type(uint256).max, address(boringVault)),
+            abi.encodePacked(rETH_wETH, MAX_AVAILABLE_MARKER)
+        );
+        targetData[6] = bytes.concat(
+            abi.encodeWithSignature("withdraw(uint256)", type(uint256).max, address(boringVault)),
+            abi.encodePacked(rETH_wETH_gauge, MAX_AVAILABLE_MARKER)
+        );
         targetData[7] = abi.encodeWithSignature("approve(address,uint256)", aura_reth_weth, type(uint256).max);
-        targetData[8] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
-        targetData[9] = abi.encodeWithSignature(
-            "withdraw(uint256,address,address)", 203690537881715311640, address(boringVault), address(boringVault)
+        targetData[8] = bytes.concat(
+            abi.encodeWithSignature("deposit(uint256,address)", type(uint256).max, address(boringVault)),
+            abi.encodePacked(rETH_wETH, MAX_AVAILABLE_MARKER)
+        );
+        targetData[9] = bytes.concat(
+            abi.encodeWithSignature(
+                "withdraw(uint256,address,address)", type(uint256).max, address(boringVault), address(boringVault)
+            ),
+            abi.encodePacked(aura_reth_weth, MAX_AVAILABLE_MARKER)
         );
         DecoderCustomTypes.ExitPoolRequest memory exitRequest = DecoderCustomTypes.ExitPoolRequest({
             assets: new address[](2),
@@ -359,13 +384,16 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         });
         exitRequest.assets[0] = address(RETH);
         exitRequest.assets[1] = address(WETH);
-        exitRequest.userData = abi.encode(1, 203690537881715311640); // EXACT_BPT_IN_FOR_TOKENS_OUT, 203690537881715311640
-        targetData[10] = abi.encodeWithSelector(
-            BalancerV2DecoderAndSanitizer.exitPool.selector,
-            poolId,
-            address(boringVault),
-            address(boringVault),
-            exitRequest
+        exitRequest.userData = abi.encode(1, type(uint256).max); // EXACT_BPT_IN_FOR_TOKENS_OUT, BPT Balacne
+        targetData[10] = bytes.concat(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.exitPool.selector,
+                poolId,
+                address(boringVault),
+                address(boringVault),
+                exitRequest
+            ),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
         );
         address[] memory decodersAndSanitizers = new address[](11);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -504,27 +532,35 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uint24(100),
             int24(600), // lower tick
             int24(700), // upper tick
-            45e18,
+            type(uint256).max,
             45e18,
             0,
             0,
             address(boringVault),
             block.timestamp
         );
-        targetData[4] = abi.encodeWithSignature(
-            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))", mintParams
+        targetData[4] = bytes.concat(
+            abi.encodeWithSignature(
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))", mintParams
+            ),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
         );
         uint256 expectedTokenId = 688183;
-        DecoderCustomTypes.IncreaseLiquidityParams memory increaseLiquidityParams =
-            DecoderCustomTypes.IncreaseLiquidityParams(expectedTokenId, 45e18, 45e18, 0, 0, block.timestamp);
-        targetData[5] = abi.encodeWithSignature(
-            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+        DecoderCustomTypes.IncreaseLiquidityParams memory increaseLiquidityParams = DecoderCustomTypes
+            .IncreaseLiquidityParams(expectedTokenId, type(uint256).max, type(uint256).max, 0, 0, block.timestamp);
+        targetData[5] = bytes.concat(
+            abi.encodeWithSignature(
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+            ),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
         );
-        uint128 expectedLiquidity = 17435811346020121907400;
         DecoderCustomTypes.DecreaseLiquidityParams memory decreaseLiquidityParams =
-            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, expectedLiquidity, 0, 0, block.timestamp);
-        targetData[6] = abi.encodeWithSignature(
-            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, type(uint128).max, 0, 0, block.timestamp);
+        targetData[6] = bytes.concat(
+            abi.encodeWithSignature(
+                "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+            ),
+            abi.encodePacked(MAX_AVAILABLE_MARKER)
         );
 
         DecoderCustomTypes.CollectParams memory collectParams = DecoderCustomTypes.CollectParams(
@@ -631,27 +667,49 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes[] memory targetData = new bytes[](14);
         targetData[0] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
-        targetData[1] =
-            abi.encodeWithSignature("exchange(int128,int128,uint256,uint256)", int128(1), int128(0), 50e18, 0);
+        targetData[1] = bytes.concat(
+            abi.encodeWithSignature(
+                "exchange(int128,int128,uint256,uint256)", int128(1), int128(0), type(uint256).max, 0
+            ),
+            abi.encodePacked(WETH, MAX_AVAILABLE_MARKER)
+        );
         targetData[2] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
         targetData[3] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
         uint256[] memory amounts = new uint256[](2);
-        amounts[0] = 48473470070721278615;
-        amounts[1] = 50e18;
-        targetData[4] = abi.encodeWithSignature("add_liquidity(uint256[],uint256)", amounts, 0);
+        amounts[0] = type(uint256).max;
+        amounts[1] = type(uint256).max;
+        targetData[4] = bytes.concat(
+            abi.encodeWithSignature("add_liquidity(uint256[],uint256)", amounts, 0),
+            abi.encodePacked(WETH, WEETH, MAX_AVAILABLE_MARKER)
+        );
         uint256 lpTokens = 99561344877023277620;
         targetData[5] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_Gauge, type(uint256).max);
-        targetData[6] = abi.encodeWithSignature("deposit(uint256,address)", lpTokens, address(boringVault));
-        targetData[7] = abi.encodeWithSignature("withdraw(uint256)", lpTokens);
+        targetData[6] = bytes.concat(
+            abi.encodeWithSignature("deposit(uint256,address)", type(uint256).max, address(boringVault)),
+            abi.encodePacked(weETH_wETH_Curve_LP, MAX_AVAILABLE_MARKER)
+        );
+        targetData[7] = bytes.concat(
+            abi.encodeWithSignature("withdraw(uint256)", type(uint256).max),
+            abi.encodePacked(weETH_wETH_Curve_Gauge, MAX_AVAILABLE_MARKER)
+        );
         targetData[8] = abi.encodeWithSignature("claim_rewards(address)", address(boringVault));
         targetData[9] =
             abi.encodeWithSignature("approve(address,uint256)", convexCurveMainnetBooster, type(uint256).max);
-        targetData[10] = abi.encodeWithSignature("deposit(uint256,uint256,bool)", 275, lpTokens, true);
-        targetData[11] = abi.encodeWithSignature("withdrawAndUnwrap(uint256,bool)", lpTokens, true);
+        targetData[10] = bytes.concat(
+            abi.encodeWithSignature("deposit(uint256,uint256,bool)", 275, type(uint256).max, true),
+            abi.encodePacked(weETH_wETH_Curve_LP, MAX_AVAILABLE_MARKER)
+        );
+        targetData[11] = bytes.concat(
+            abi.encodeWithSignature("withdrawAndUnwrap(uint256,bool)", type(uint256).max, true),
+            abi.encodePacked(weETH_wETH_Convex_Reward, MAX_AVAILABLE_MARKER)
+        );
         targetData[12] = abi.encodeWithSignature("getReward(address,bool)", weETH_wETH_Convex_Reward, true);
         amounts[0] = 0;
         amounts[1] = 0;
-        targetData[13] = abi.encodeWithSignature("remove_liquidity(uint256,uint256[])", lpTokens, amounts);
+        targetData[13] = bytes.concat(
+            abi.encodeWithSignature("remove_liquidity(uint256,uint256[])", type(uint256).max, amounts),
+            abi.encodePacked(weETH_wETH_Curve_LP, MAX_AVAILABLE_MARKER)
+        );
         address[] memory decodersAndSanitizers = new address[](14);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;

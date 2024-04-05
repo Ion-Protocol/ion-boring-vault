@@ -10,8 +10,18 @@ abstract contract GearboxDecoderAndSanitizer is BaseDecoderAndSanitizer {
         targetData = msg.data;
     }
 
-    function withdraw(uint256) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
-        targetData = msg.data;
+    function withdraw(uint256 amount)
+        external
+        view
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        if (_checkForMarker(MAX_AVAILABLE_MARKER)) {
+            amount = _maxAvailableFromOffset(64, amount);
+            targetData = abi.encodeWithSelector(this.withdraw.selector, amount);
+        } else {
+            targetData = msg.data;
+        }
     }
 
     function claim() external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
