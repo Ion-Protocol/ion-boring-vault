@@ -6,11 +6,23 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 abstract contract ERC4626DecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== ERC4626 ===============================
 
-    function deposit(uint256, address receiver) external pure virtual returns (bytes memory addressesFound) {
+    function deposit(uint256, address receiver)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver);
     }
 
-    function mint(uint256, address receiver) external pure virtual returns (bytes memory addressesFound) {
+    function mint(uint256, address receiver)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver);
     }
 
@@ -18,8 +30,9 @@ abstract contract ERC4626DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver, owner);
     }
 
@@ -27,8 +40,9 @@ abstract contract ERC4626DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver, owner);
     }
 }

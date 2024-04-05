@@ -135,10 +135,10 @@ contract ManagerWithMerkleVerification is Auth {
         bytes32 strategistManageRoot = manageRoot[msg.sender];
 
         for (uint256 i; i < targetsLength; ++i) {
-            _verifyCallData(
+            bytes memory newTargetData = _verifyCallData(
                 strategistManageRoot, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]
             );
-            vault.manage(targets[i], targetData[i], values[i]);
+            vault.manage(targets[i], newTargetData, values[i]);
         }
         emit BoringVaultManaged(targetsLength);
     }
@@ -225,9 +225,11 @@ contract ManagerWithMerkleVerification is Auth {
         address target,
         uint256 value,
         bytes calldata targetData
-    ) internal view {
-        // Use address decoder to get addresses in call data.
-        bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
+    ) internal view returns (bytes memory newTargetData) {
+        // Use address decoder to get addresses in call data, and new targetData.
+        bytes memory packedArgumentAddresses;
+        (packedArgumentAddresses, newTargetData) =
+            abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes, bytes));
 
         if (
             !_verifyManageProof(
@@ -236,11 +238,11 @@ contract ManagerWithMerkleVerification is Auth {
                 target,
                 decoderAndSanitizer,
                 value,
-                bytes4(targetData),
+                bytes4(newTargetData),
                 packedArgumentAddresses
             )
         ) {
-            revert ManagerWithMerkleVerification__FailedToVerifyManageProof(target, targetData, value);
+            revert ManagerWithMerkleVerification__FailedToVerifyManageProof(target, newTargetData, value);
         }
     }
 

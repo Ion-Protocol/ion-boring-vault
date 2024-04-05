@@ -47,8 +47,9 @@ contract EtherFiLiquidDecoderAndSanitizer is
         external
         pure
         override(BalancerV2DecoderAndSanitizer, ERC4626DecoderAndSanitizer, CurveDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver);
     }
 
@@ -60,9 +61,9 @@ contract EtherFiLiquidDecoderAndSanitizer is
         external
         pure
         override(EtherFiDecoderAndSanitizer, NativeWrapperDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
-        return addressesFound;
+        targetData = msg.data;
     }
 
     /**
@@ -78,10 +79,9 @@ contract EtherFiLiquidDecoderAndSanitizer is
             NativeWrapperDecoderAndSanitizer,
             GearboxDecoderAndSanitizer
         )
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
-        // Nothing to sanitize or return
-        return addressesFound;
+        targetData = msg.data;
     }
 
     /**
@@ -92,8 +92,9 @@ contract EtherFiLiquidDecoderAndSanitizer is
         external
         pure
         override(AuraDecoderAndSanitizer, ConvexDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(_addr);
     }
 }

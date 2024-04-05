@@ -15,16 +15,18 @@ abstract contract OneInchDecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.SwapDescription calldata desc,
         bytes calldata permit,
         bytes calldata
-    ) external pure returns (bytes memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound, bytes memory targetData) {
         if (permit.length > 0) revert OneInchDecoderAndSanitizer__PermitNotSupported();
+        targetData = msg.data;
         addressesFound = abi.encodePacked(executor, desc.srcToken, desc.dstToken, desc.srcReceiver, desc.dstReceiver);
     }
 
     function uniswapV3Swap(uint256, uint256, uint256[] calldata pools)
         external
         pure
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         for (uint256 i; i < pools.length; ++i) {
             addressesFound = abi.encodePacked(addressesFound, uint160(pools[i]));
         }

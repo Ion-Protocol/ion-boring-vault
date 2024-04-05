@@ -27,9 +27,9 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
-        // Nothing to sanitize
+        targetData = msg.data;
         // Return addresses found
         // Determine how many addresses are in params.path.
         uint256 chunkSize = 23; // 3 bytes for uint24 fee, and 20 bytes for address token
@@ -48,9 +48,9 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
-        // Nothing to sanitize
+        targetData = msg.data;
         // Return addresses found
         addressesFound = abi.encodePacked(params.token0, params.token1, params.recipient);
     }
@@ -59,12 +59,13 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         view
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
         // Sanitize raw data
         if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
+        targetData = msg.data;
         // Extract addresses from uniswapV3NonFungiblePositionManager.positions(params.tokenId).
         (, address operator, address token0, address token1,,,,,,,,) =
             uniswapV3NonFungiblePositionManager.positions(params.tokenId);
@@ -75,7 +76,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         view
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
@@ -84,15 +85,14 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
 
-        // No addresses in data
-        return addressesFound;
+        targetData = msg.data;
     }
 
     function collect(DecoderCustomTypes.CollectParams calldata params)
         external
         view
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
@@ -100,7 +100,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
-
+        targetData = msg.data;
         // Return addresses found
         addressesFound = abi.encodePacked(params.recipient);
     }

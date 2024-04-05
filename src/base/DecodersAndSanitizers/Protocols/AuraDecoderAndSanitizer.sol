@@ -6,7 +6,13 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 abstract contract AuraDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== AURA ===============================
 
-    function getReward(address _user, bool) external pure virtual returns (bytes memory addressesFound) {
+    function getReward(address _user, bool)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(_user);
     }
 }

@@ -14,13 +14,14 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
         if (
             input.swapData.swapType != DecoderCustomTypes.SwapType.NONE || input.swapData.extRouter != address(0)
                 || input.pendleSwap != address(0) || input.tokenIn != input.tokenMintSy
         ) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
 
+        targetData = msg.data;
         addressesFound =
             abi.encodePacked(user, sy, input.tokenIn, input.tokenMintSy, input.pendleSwap, input.swapData.extRouter);
     }
@@ -29,8 +30,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, yt);
     }
 
@@ -38,8 +40,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, market);
     }
 
@@ -47,8 +50,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, market);
     }
 
@@ -56,8 +60,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, market);
     }
 
@@ -65,8 +70,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, market);
     }
 
@@ -74,8 +80,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user, yt);
     }
 
@@ -83,13 +90,14 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
         if (
             output.swapData.swapType != DecoderCustomTypes.SwapType.NONE || output.swapData.extRouter != address(0)
                 || output.pendleSwap != address(0) || output.tokenOut != output.tokenRedeemSy
         ) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
 
+        targetData = msg.data;
         addressesFound = abi.encodePacked(
             user, sy, output.tokenOut, output.tokenRedeemSy, output.pendleSwap, output.swapData.extRouter
         );
@@ -100,7 +108,8 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         address[] calldata sys,
         address[] calldata yts,
         address[] calldata markets
-    ) external pure virtual returns (bytes memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(user);
         uint256 sysLength = sys.length;
         for (uint256 i; i < sysLength; ++i) {

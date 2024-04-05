@@ -15,8 +15,9 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(recipient);
         for (uint256 i; i < tokens.length; ++i) {
             addressesFound = abi.encodePacked(addressesFound, tokens[i]);
@@ -28,12 +29,13 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.FundManagement calldata funds,
         uint256,
         uint256
-    ) external pure virtual returns (bytes memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
         // Sanitize raw data
         if (singleSwap.userData.length > 0) revert BalancerV2DecoderAndSanitizer__SingleSwapUserDataLengthNonZero();
         if (funds.fromInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
         if (funds.toInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
 
+        targetData = msg.data;
         // Return addresses found
         addressesFound = abi.encodePacked(
             _getPoolAddressFromPoolId(singleSwap.poolId),
@@ -49,9 +51,10 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         address sender,
         address recipient,
         DecoderCustomTypes.JoinPoolRequest calldata req
-    ) external pure virtual returns (bytes memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
         // Sanitize raw data
         if (req.fromInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
+        targetData = msg.data;
         // Return addresses found
         addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
@@ -65,9 +68,10 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         address sender,
         address recipient,
         DecoderCustomTypes.ExitPoolRequest calldata req
-    ) external pure virtual returns (bytes memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
         // Sanitize raw data
         if (req.toInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
+        targetData = msg.data;
         // Return addresses found
         addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
@@ -76,16 +80,22 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         }
     }
 
-    function deposit(uint256, address recipient) external pure virtual returns (bytes memory addressesFound) {
+    function deposit(uint256, address recipient)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(recipient);
     }
 
-    function withdraw(uint256) external pure virtual returns (bytes memory addressesFound) {
-        // No addresses in data
-        return addressesFound;
+    function withdraw(uint256) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
+        targetData = msg.data;
     }
 
-    function mint(address gauge) external pure virtual returns (bytes memory addressesFound) {
+    function mint(address gauge) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(gauge);
     }
 

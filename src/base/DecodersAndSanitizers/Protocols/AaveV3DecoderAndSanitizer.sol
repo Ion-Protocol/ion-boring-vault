@@ -10,12 +10,19 @@ abstract contract AaveV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(asset, onBehalfOf);
     }
 
-    function withdraw(address asset, uint256, address to) external pure virtual returns (bytes memory addressesFound) {
+    function withdraw(address asset, uint256, address to)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound, bytes memory targetData)
+    {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(asset, to);
     }
 
@@ -23,8 +30,9 @@ abstract contract AaveV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(asset, onBehalfOf);
     }
 
@@ -32,8 +40,9 @@ abstract contract AaveV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(asset, onBehalfOf);
     }
 
@@ -41,13 +50,14 @@ abstract contract AaveV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(asset);
     }
 
-    function setUserEMode(uint8) external pure virtual returns (bytes memory addressesFound) {
-        // Nothing to sanitize or return
-        return addressesFound;
+    function setUserEMode(uint8) external pure virtual returns (bytes memory addressesFound, bytes memory targetData) {
+        // Nothing to sanitize
+        targetData = msg.data;
     }
 }

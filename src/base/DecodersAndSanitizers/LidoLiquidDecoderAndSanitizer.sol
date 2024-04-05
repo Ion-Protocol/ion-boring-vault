@@ -47,8 +47,9 @@ contract LidoLiquidDecoderAndSanitizer is
         external
         pure
         override(BalancerV2DecoderAndSanitizer, ERC4626DecoderAndSanitizer, CurveDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(receiver);
     }
 
@@ -65,10 +66,9 @@ contract LidoLiquidDecoderAndSanitizer is
             NativeWrapperDecoderAndSanitizer,
             GearboxDecoderAndSanitizer
         )
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
-        // Nothing to sanitize or return
-        return addressesFound;
+        targetData = msg.data;
     }
 
     /**
@@ -79,8 +79,9 @@ contract LidoLiquidDecoderAndSanitizer is
         external
         pure
         override(AuraDecoderAndSanitizer, ConvexDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
+        returns (bytes memory addressesFound, bytes memory targetData)
     {
+        targetData = msg.data;
         addressesFound = abi.encodePacked(_addr);
     }
 }
