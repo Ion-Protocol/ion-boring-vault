@@ -1,0 +1,139 @@
+from "hashes/keccak/256bit" import main as keccak;
+
+from "EMBED" import u8_to_bits;
+from "EMBED" import u8_from_bits;
+from "EMBED" import u64_from_bits;
+from "utils/pack/bool/pack128" import main as pack128;
+from "utils/pack/bool/unpack128" import main as unpack128;
+
+struct U256 {
+    field msb;
+    field lsb;
+}
+
+def U256_to_array(U256 input) -> u8[32] {
+    bool[256] bits = [...unpack128(input.msb), ...unpack128(input.lsb)];
+    return [
+        u8_from_bits(bits[0..8]),
+        u8_from_bits(bits[8..16]),
+        u8_from_bits(bits[16..24]),
+        u8_from_bits(bits[24..32]),
+        u8_from_bits(bits[32..40]),
+        u8_from_bits(bits[40..48]),
+        u8_from_bits(bits[48..56]),
+        u8_from_bits(bits[56..64]),
+        u8_from_bits(bits[64..72]),
+        u8_from_bits(bits[72..80]),
+        u8_from_bits(bits[80..88]),
+        u8_from_bits(bits[88..96]),
+        u8_from_bits(bits[96..104]),
+        u8_from_bits(bits[104..112]),
+        u8_from_bits(bits[112..120]),
+        u8_from_bits(bits[120..128]),
+        u8_from_bits(bits[128..136]),
+        u8_from_bits(bits[136..144]),
+        u8_from_bits(bits[144..152]),
+        u8_from_bits(bits[152..160]),
+        u8_from_bits(bits[160..168]),
+        u8_from_bits(bits[168..176]),
+        u8_from_bits(bits[176..184]),
+        u8_from_bits(bits[184..192]),
+        u8_from_bits(bits[192..200]),
+        u8_from_bits(bits[200..208]),
+        u8_from_bits(bits[208..216]),
+        u8_from_bits(bits[216..224]),
+        u8_from_bits(bits[224..232]),
+        u8_from_bits(bits[232..240]),
+        u8_from_bits(bits[240..248]),
+        u8_from_bits(bits[248..256])
+    ];
+}
+
+def U256_from_array(u8[32] input) -> U256 {
+    bool[256] bits = [
+        ...u8_to_bits(input[0]),
+        ...u8_to_bits(input[1]),
+        ...u8_to_bits(input[2]),
+        ...u8_to_bits(input[3]),
+        ...u8_to_bits(input[4]),
+        ...u8_to_bits(input[5]),
+        ...u8_to_bits(input[6]),
+        ...u8_to_bits(input[7]),
+        ...u8_to_bits(input[8]),
+        ...u8_to_bits(input[9]),
+        ...u8_to_bits(input[10]),
+        ...u8_to_bits(input[11]),
+        ...u8_to_bits(input[12]),
+        ...u8_to_bits(input[13]),
+        ...u8_to_bits(input[14]),
+        ...u8_to_bits(input[15]),
+        ...u8_to_bits(input[16]),
+        ...u8_to_bits(input[17]),
+        ...u8_to_bits(input[18]),
+        ...u8_to_bits(input[19]),
+        ...u8_to_bits(input[20]),
+        ...u8_to_bits(input[21]),
+        ...u8_to_bits(input[22]),
+        ...u8_to_bits(input[23]),
+        ...u8_to_bits(input[24]),
+        ...u8_to_bits(input[25]),
+        ...u8_to_bits(input[26]),
+        ...u8_to_bits(input[27]),
+        ...u8_to_bits(input[28]),
+        ...u8_to_bits(input[29]),
+        ...u8_to_bits(input[30]),
+        ...u8_to_bits(input[31])
+    ];
+
+    return U256{
+        msb: pack128(bits[0..128]),
+        lsb: pack128(bits[128..256])
+    };
+}
+
+def order_ascending_U256(U256 a, U256 b) -> (U256, U256) {
+    return if a.msb == b.msb {
+        // Look at lsb to decide order.
+        (a.lsb > b.lsb ? b : a, a.lsb > b.lsb ? a : b)
+    } else {
+        // Look at msb to decide order.
+        (a.msb > b.msb ? b : a, a.msb > b.msb ? a : b)
+    };
+}
+
+def check_equality_U256(U256 a, U256 b) -> bool {
+    return a.msb == b.msb && a.lsb == b.lsb;
+}
+
+def hash(U256 a, U256 b) -> U256 {
+    (U256, U256) digests = order_ascending_U256(a, b);
+    u8[32] digest_array = keccak([...U256_to_array(digests.0), ...U256_to_array(digests.1)]);
+    return U256_from_array(digest_array);
+}
+
+const u32 DEPTH = 10;
+
+/*
+    * leaf: The leaf of the merkle tree, derived using strategist inputs.
+    * root: The root of the merkle tree, read from state.
+    * nonce: The last recorded manage nonce.
+    * timestamp: The current block.timestamp.
+    * secret_nonce: The nonce that the strategist has assigned to this management call.
+    * deadline: The deadline for the management call.
+    * merkle_proof: The merkle proof for the leaf to the root, provided by the strategist.
+*/
+def main(U256 leaf, U256 root, field nonce, field timestamp, private field secret_nonce, private field deadline, private U256[DEPTH] merkle_proof) {
+    // Check that the nonce is valid.
+    bool nonce_check = nonce + 1 == secret_nonce;
+    assert(nonce_check);
+
+    // Check deadline.
+    assert(timestamp < deadline);
+
+    // Check the merkle proof.
+    U256 mut digest = leaf;
+    for u32 i in 0..DEPTH {
+        digest = hash(digest, merkle_proof[i]);
+    }
+    assert(check_equality_U256(digest, root));
+}

@@ -16,3 +16,6 @@ docs/
 
 
 *.json
+
+# Zokrates
+zokrates/output/
