@@ -170,7 +170,7 @@ library Pairing {
     }
 }
 
-contract Verifier {
+contract Root64Verifier {
     using Pairing for *;
 
     struct VerifyingKey {

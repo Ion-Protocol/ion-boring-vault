@@ -113,6 +113,8 @@ def hash(U256 a, U256 b) -> U256 {
 
 const u32 DEPTH = 10;
 
+// TODO remove the deadline logic, for proof generation the deadline and timestamp must be known, but knowing the timestamp is diffcult
+// as it is set by the block builder
 /*
     * leaf: The leaf of the merkle tree, derived using strategist inputs.
     * root: The root of the merkle tree, read from state.
