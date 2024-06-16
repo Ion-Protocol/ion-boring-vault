@@ -66,7 +66,7 @@ contract AtomicQueue is ReentrancyGuard {
     /**
      * @notice Maps user address to offer asset to want asset to a AtomicRequest struct.
      */
-    mapping(address => mapping(ERC20 => mapping(ERC20 => AtomicRequest))) public userAtomicRequest;
+    mapping(ERC20 => mapping(ERC20 => mapping(address => AtomicRequest))) public userAtomicRequest;
 
     //============================== ERRORS ===============================
 
@@ -111,7 +111,7 @@ contract AtomicQueue is ReentrancyGuard {
      * @param want the ERC20 token they want in exchange for the offer
      */
     function getUserAtomicRequest(address user, ERC20 offer, ERC20 want) external view returns (AtomicRequest memory) {
-        return userAtomicRequest[user][offer][want];
+        return userAtomicRequest[offer][want][user];
     }
 
     /**
@@ -155,7 +155,7 @@ contract AtomicQueue is ReentrancyGuard {
      * @param userRequest the users request
      */
     function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) external nonReentrant {
-        AtomicRequest storage request = userAtomicRequest[msg.sender][offer][want];
+        AtomicRequest storage request = userAtomicRequest[offer][want][msg.sender];
 
         request.deadline = userRequest.deadline;
         request.atomicPrice = userRequest.atomicPrice;
@@ -194,29 +194,34 @@ contract AtomicQueue is ReentrancyGuard {
         // Save offer asset decimals.
         uint8 offerDecimals = offer.decimals();
 
-        uint256 assetsToOffer;
-        uint256 assetsForWant;
-        for (uint256 i; i < users.length; ++i) {
-            AtomicRequest storage request = userAtomicRequest[users[i]][offer][want];
+        uint256[2] memory assetsToOfferAndForWant;
+        mapping(address => AtomicRequest)
+            storage intermediateUserKey = userAtomicRequest[offer][want];
+        for (uint256 i; i < users.length;) {
+            AtomicRequest storage request = intermediateUserKey[users[i]];
 
             if (request.inSolve) revert AtomicQueue__UserRepeated(users[i]);
             if (block.timestamp > request.deadline) revert AtomicQueue__RequestDeadlineExceeded(users[i]);
             if (request.offerAmount == 0) revert AtomicQueue__ZeroOfferAmount(users[i]);
 
             // User gets whatever their atomic price * offerAmount is.
-            assetsForWant += _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
+            assetsToOfferAndForWant[1] += _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
 
             // If all checks above passed, the users request is valid and should be fulfilled.
-            assetsToOffer += request.offerAmount;
+            assetsToOfferAndForWant[0] += request.offerAmount;
             request.inSolve = true;
+            {
             // Transfer shares from user to solver.
-            offer.safeTransferFrom(users[i], solver, request.offerAmount);
+            offer.safeTransferFrom(users[i], solver, request.offerAmount);}
+            unchecked {
+                ++i;
+            }
         }
 
-        IAtomicSolver(solver).finishSolve(runData, msg.sender, offer, want, assetsToOffer, assetsForWant);
+        IAtomicSolver(solver).finishSolve(runData, msg.sender, offer, want, assetsToOfferAndForWant[0], assetsToOfferAndForWant[1]);
 
-        for (uint256 i; i < users.length; ++i) {
-            AtomicRequest storage request = userAtomicRequest[users[i]][offer][want];
+        for (uint256 i; i < users.length;) {
+            AtomicRequest storage request = intermediateUserKey[users[i]];
 
             if (request.inSolve) {
                 // We know that the minimum price and deadline arguments are satisfied since this can only be true if they were.
@@ -235,6 +240,9 @@ contract AtomicQueue is ReentrancyGuard {
                 request.inSolve = false;
             } else {
                 revert AtomicQueue__UserNotInSolve(users[i]);
+            }
+            unchecked {
+                ++i;
             }
         }
     }
@@ -261,8 +269,11 @@ contract AtomicQueue is ReentrancyGuard {
         // Setup meta data.
         metaData = new SolveMetaData[](users.length);
 
+        mapping(address => AtomicRequest)
+            storage intermediateUserKey = userAtomicRequest[offer][want];
+
         for (uint256 i; i < users.length; ++i) {
-            AtomicRequest memory request = userAtomicRequest[users[i]][offer][want];
+            AtomicRequest memory request = intermediateUserKey[users[i]];
 
             metaData[i].user = users[i];
 
