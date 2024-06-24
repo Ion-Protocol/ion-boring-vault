@@ -16,18 +16,18 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @param payoutAddress the address `claimFees` sends fees to
-     * @param highwaterMark the highest value of the BoringVault's share price [decimals]
-     * @param feesOwedInBase total pending fees owed in terms of base [decimals]
-     * @param totalSharesLastUpdate total amount of shares the last exchange rate update [vault.decimals]
-     * @param exchangeRate the current exchange rate in terms of base [decimals]
-     * @param allowedExchangeRateChangeUpper the max allowed change to exchange rate from an update [1e4]
-     * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update [1e4]
+     * @param highwaterMark the highest value of the BoringVault's share price                              [decimals]
+     * @param feesOwedInBase total pending fees owed in terms of base                                       [decimals]
+     * @param totalSharesLastUpdate total amount of shares the last exchange rate update                    [vault.decimals]
+     * @param exchangeRate the current exchange rate in terms of base                                       [decimals]
+     * @param allowedExchangeRateChangeUpper the max allowed change to exchange rate from an update         [1e4]
+     * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update         [1e4]
      * @param lastUpdateTimestamp the block timestamp of the last exchange rate update
      * @param isPaused whether or not this contract is paused
      * @param minimumUpdateDelayInSeconds the minimum amount of time that must pass between
      *        exchange rate updates, such that the update won't trigger the contract to be paused
-     * @param managementFee the management fee [1e4]
-     * @param performanceFee the performance fee [1e4]
+     * @param managementFee the management fee                                                              [1e4]
+     * @param performanceFee the performance fee                                                            [1e4]
      */
     struct AccountantState {
         address payoutAddress;
