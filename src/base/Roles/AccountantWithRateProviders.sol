@@ -16,18 +16,18 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @param payoutAddress the address `claimFees` sends fees to
-     * @param highwaterMark the highest value of the BoringVault's share price
-     * @param feesOwedInBase total pending fees owed in terms of base
-     * @param totalSharesLastUpdate total amount of shares the last exchange rate update
-     * @param exchangeRate the current exchange rate in terms of base
-     * @param allowedExchangeRateChangeUpper the max allowed change to exchange rate from an update
-     * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update
+     * @param highwaterMark the highest value of the BoringVault's share price [decimals]
+     * @param feesOwedInBase total pending fees owed in terms of base [decimals]
+     * @param totalSharesLastUpdate total amount of shares the last exchange rate update [vault.decimals]
+     * @param exchangeRate the current exchange rate in terms of base [decimals]
+     * @param allowedExchangeRateChangeUpper the max allowed change to exchange rate from an update [1e4]
+     * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update [1e4]
      * @param lastUpdateTimestamp the block timestamp of the last exchange rate update
      * @param isPaused whether or not this contract is paused
      * @param minimumUpdateDelayInSeconds the minimum amount of time that must pass between
      *        exchange rate updates, such that the update won't trigger the contract to be paused
-     * @param managementFee the management fee
-     * @param performanceFee the performance fee
+     * @param managementFee the management fee [1e4]
+     * @param performanceFee the performance fee [1e4]
      */
     struct AccountantState {
         address payoutAddress;
@@ -183,6 +183,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
+     * @param allowedExchangeRateChangeUpper [1e4]
      * @dev Callable by OWNER_ROLE.
      */
     function updateUpper(uint16 allowedExchangeRateChangeUpper) external requiresAuth {
@@ -194,6 +195,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
+     * @param allowedExchangeRateChangeLower [1e4]
      * @dev Callable by OWNER_ROLE.
      */
     function updateLower(uint16 allowedExchangeRateChangeLower) external requiresAuth {
@@ -205,6 +207,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the management fee to a new value.
+     * @param managementFee [1e4]
      * @dev Callable by OWNER_ROLE.
      */
     function updateManagementFee(uint16 managementFee) external requiresAuth {
@@ -216,6 +219,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the performance fee to a new value.
+     * @param performanceFee [1e4]
      * @dev Callable by OWNER_ROLE.
      */
     function updatePerformanceFee(uint16 performanceFee) external requiresAuth {
@@ -273,6 +277,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Updates this contract exchangeRate.
+     * @param newExchangeRate [decimals] : provided in constructor
      * @dev If new exchange rate is outside of accepted bounds, or if not enough time has passed, this
      *      will pause the contract, and this function will NOT calculate fees owed.
      * @dev Callable by UPDATE_EXCHANGE_RATE_ROLE.
@@ -343,6 +348,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Get this BoringVault's current rate in the base.
+     * @return rate [decimals]
      */
     function getRate() public view returns (uint256 rate) {
         rate = accountantState.exchangeRate;
@@ -350,6 +356,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Get this BoringVault's current rate in the base.
+     * @return rate [decimals]
      * @dev Revert if paused.
      */
     function getRateSafe() external view returns (uint256 rate) {
@@ -362,6 +369,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @dev `quote` must have its RateProviderData set, else this will revert.
      * @dev This function will lose precision if the exchange rate
      *      decimals is greater than the quote's decimals.
+     * @return rateInQuote [decimals]
      */
     function getRateInQuote(ERC20 quote) public view returns (uint256 rateInQuote) {
         if (address(quote) == address(base)) {
@@ -383,6 +391,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Get this BoringVault's current rate in the provided quote.
      * @dev `quote` must have its RateProviderData set, else this will revert.
+     * @return rateInQuote [decimals]
      * @dev Revert if paused.
      */
     function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
@@ -406,6 +415,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Calculate fees owed in base.
+     * @param newExchangeRate [decimals] : provided in constructor
+     * @param currentExchangeRate [decimals] : provided in constructor
+     * @param currentTotalShares [vault.decimals()] : set in constructor, it's never guaranteed to = base asset decimals
      * @dev This function will update the highwater mark if the new exchange rate is higher.
      */
     function _calculateFeesOwed(
@@ -425,17 +437,27 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
         // Determine management fees owned.
         uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
+
+        // if newExchangeRate [decimals] > currentExchangeRate [decimals]
         uint256 minimumAssets = newExchangeRate > currentExchangeRate
+            // minimumAssets [decimals] = shareSupplyToUse [vault.decimals()] * currentExchangeRate [decimals] / 1 [vault.decimals]
             ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
+            // minimumAssets [decimals] = shareSupplyToUse [vault.decimals()] * newExchangeRate [decimals] / 1 [vault.decimals]
             : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
+
+        // managementFeesAnnual [decimals] = minimumAssets [decimals] * state.managementFee[1e4] / 1e4
         uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
+
+        // [decimals]
         uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {
             if (state.performanceFee > 0) {
                 uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
+                // [decimals] = [decimals] * [vault.decimals] / [vault.decimals]
                 uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
+                // [decimals] = [decimals] * [1e4] / [1e4]
                 uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
                 newFeesOwedInBase += performanceFeesOwedInBase;
             }

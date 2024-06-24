@@ -70,6 +70,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
      * @notice Allows minter to mint shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred in.
      * @dev Callable by MINTER_ROLE.
+     * @param shareAmount [_decimals] this is passed in via constructor
      */
     function enter(address from, ERC20 asset, uint256 assetAmount, address to, uint256 shareAmount)
         external
@@ -90,6 +91,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
      * @notice Allows burner to burn shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred out.
      * @dev Callable by BURNER_ROLE.
+     * @param shareAmount [_decimals] this is passed in via constructor
      */
     function exit(address to, ERC20 asset, uint256 assetAmount, address from, uint256 shareAmount)
         external
