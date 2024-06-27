@@ -37,12 +37,12 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
 
     //============================== ERRORS ===============================
 
-    error AtomicSolverV3___WrongInitiator();
-    error AtomicSolverV3___AlreadyInSolveContext();
-    error AtomicSolverV3___FailedToSolve();
-    error AtomicSolverV3___SolveMaxAssetsExceeded(uint256 actualAssets, uint256 maxAssets);
-    error AtomicSolverV3___P2PSolveMinSharesNotMet(uint256 actualShares, uint256 minShares);
-    error AtomicSolverV3___BoringVaultTellerMismatch(address vault, address teller);
+    error AtomicSolverV4___WrongInitiator();
+    error AtomicSolverV4___AlreadyInSolveContext();
+    error AtomicSolverV4___FailedToSolve();
+    error AtomicSolverV4___SolveMaxAssetsExceeded(uint256 actualAssets, uint256 maxAssets);
+    error AtomicSolverV4___P2PSolveMinSharesNotMet(uint256 actualShares, uint256 minShares);
+    error AtomicSolverV4___BoringVaultTellerMismatch(address vault, address teller);
 
     //============================== IMMUTABLES ===============================
 
@@ -83,13 +83,12 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         AccountantWithRateProviders accountant = teller.accountant();
         uint256 rateToCheck = accountant.getRateInQuoteSafe(want);
         if (rateToCheck == 0) {
-            revert AtomicSolverV3___FailedToSolve();
+            revert AtomicSolverV4___FailedToSolve();
         }
         uint8 offerDecimals = offer.decimals(); // will be vault decimals if offer is vault (if it is not vault will revert later)
         uint256 OneShare = 10**offerDecimals;
         uint256 priceToCheckAtomicPrice = OneShare.mulDivDown(OneShare,rateToCheck);
         bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller, priceToCheckAtomicPrice);
-        //bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller);
 
         // Solve for `users`.
         queue.solve(offer, want, users, runData, address(this));
@@ -113,7 +112,7 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 offerReceived,
         uint256 wantApprovalAmount
     ) external requiresAuth {
-        if (initiator != address(this)) revert AtomicSolverV3___WrongInitiator();
+        if (initiator != address(this)) revert AtomicSolverV4___WrongInitiator();
 
         address queue = msg.sender;
 
@@ -144,12 +143,12 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
 
         // Make sure solver is receiving the minimum amount of offer.
         if (offerReceived < minOfferReceived) {
-            revert AtomicSolverV3___P2PSolveMinSharesNotMet(offerReceived, minOfferReceived);
+            revert AtomicSolverV4___P2PSolveMinSharesNotMet(offerReceived, minOfferReceived);
         }
 
         // Make sure solvers `maxAssets` was not exceeded.
         if (wantApprovalAmount > maxAssets) {
-            revert AtomicSolverV3___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
+            revert AtomicSolverV4___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
         }
 
         // Transfer required want from solver.
@@ -177,11 +176,11 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
             abi.decode(runData, (SolveType, address, uint256, uint256, TellerWithMultiAssetSupport));
 
         if (address(offer) != address(teller.vault())) {
-            revert AtomicSolverV3___BoringVaultTellerMismatch(address(offer), address(teller));
+            revert AtomicSolverV4___BoringVaultTellerMismatch(address(offer), address(teller));
         }
         // Make sure solvers `maxAssets` was not exceeded.
         if (wantApprovalAmount > maxAssets) {
-            revert AtomicSolverV3___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
+            revert AtomicSolverV4___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
         }
 
         // Redeem the shares, sending assets to solver.
