@@ -15,7 +15,7 @@ import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProv
  * @title AtomicSolverV4
  * @author jpick713
  */
-contract AtomicSolverV3 is IAtomicSolver, Auth {
+contract AtomicSolverV4 is IAtomicSolver, Auth {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     // ========================================= CONSTANTS =========================================
@@ -61,7 +61,7 @@ contract AtomicSolverV3 is IAtomicSolver, Auth {
         uint256 minOfferReceived,
         uint256 maxAssets
     ) external requiresAuth {
-        bytes memory runData = abi.encode(SolveType.P2P, msg.sender, minOfferReceived, maxAssets);
+        bytes memory runData = abi.encode(SolveType.P2P, msg.sender, minOfferReceived, maxAssets, type(uint256).max);
 
         // Solve for `users`.
         queue.solve(offer, want, users, runData, address(this));
@@ -87,7 +87,7 @@ contract AtomicSolverV3 is IAtomicSolver, Auth {
         }
         uint8 offerDecimals = offer.decimals(); // will be vault decimals if offer is vault (if it is not vault will revert later)
         uint256 OneShare = 10**offerDecimals;
-        priceToCheckAtomicPrice = OneShare.mulDivDown(OneShare,rateToCheck);
+        uint256 priceToCheckAtomicPrice = OneShare.mulDivDown(OneShare,rateToCheck);
         bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller, priceToCheckAtomicPrice);
         //bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller);
 

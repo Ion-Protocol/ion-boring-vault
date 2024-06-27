@@ -6,6 +6,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IAtomicSolver} from "./IAtomicSolver.sol";
+import {AtomicSolverV4} from "./AtomicSolverV4.sol";
 
 /**
  * @title AtomicQueue
@@ -74,6 +75,7 @@ contract AtomicQueue is ReentrancyGuard {
     error AtomicQueue__RequestDeadlineExceeded(address user);
     error AtomicQueue__UserNotInSolve(address user);
     error AtomicQueue__ZeroOfferAmount(address user);
+    error AtomicQueue__PriceTooHigh(address user, uint256 atomicPrice, uint256 priceToCheck);
 
     //============================== EVENTS ===============================
 
@@ -194,11 +196,11 @@ contract AtomicQueue is ReentrancyGuard {
         // Save offer asset decimals.
         uint8 offerDecimals = offer.decimals();
 
-        // decode runData
-        (IAtomicSolver.SolveType _solveType, , , , , uint256 priceToCheck) = abi.decode(runData, (IAtomicSolver.SolveType, address, uint256, uint256, address, uint256));
-        priceToCheck = _solveType == IAtomicSolver.SolveType.REDEEM ? priceToCheck : 0;
+        // Get price limit from runData.
+        // store price limit in last variable of wantAndOfferInfo
+        // index 0 is total want assets, index 1 is total offer assets, index 2 is priceLimit
+        uint256[3] memory wantAndOfferInfo = _wantAndOfferInfoHelper(runData);
 
-        uint256[2] memory assetsToOfferAndForWant;
         mapping(address => AtomicRequest)
             storage intermediateUserKey = userAtomicRequest[offer][want];
         for (uint256 i; i < users.length;) {
@@ -207,15 +209,15 @@ contract AtomicQueue is ReentrancyGuard {
             if (request.inSolve) revert AtomicQueue__UserRepeated(users[i]);
             if (block.timestamp > request.deadline) revert AtomicQueue__RequestDeadlineExceeded(users[i]);
             if (request.offerAmount == 0) revert AtomicQueue__ZeroOfferAmount(users[i]);
-            // if(request.atomicPrice > priceToCheck) revert AtomicQueue__PriceTooHigh(users[i], request.atomicPrice, priceToCheck);
+            if(request.atomicPrice > wantAndOfferInfo[2]) revert AtomicQueue__PriceTooHigh(users[i], request.atomicPrice, wantAndOfferInfo[2]);
             // todo: think about instead of still passing in request.atomicPrice, could pass in priceToCheck for every user (leave no excess for solver)
             // still have DoS/griefing vector even if you skip by price, since you can still front run requests with high offer amounts or pull your approval/balance
 
             // User gets whatever their atomic price * offerAmount is.
-            assetsToOfferAndForWant[1] += _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
+            wantAndOfferInfo[1] += _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
 
             // If all checks above passed, the users request is valid and should be fulfilled.
-            assetsToOfferAndForWant[0] += request.offerAmount;
+            wantAndOfferInfo[0] += request.offerAmount;
             request.inSolve = true;
             {
             // Transfer shares from user to solver.
@@ -225,7 +227,7 @@ contract AtomicQueue is ReentrancyGuard {
             }
         }
 
-        IAtomicSolver(solver).finishSolve(runData, msg.sender, offer, want, assetsToOfferAndForWant[0], assetsToOfferAndForWant[1]);
+        IAtomicSolver(solver).finishSolve(runData, msg.sender, offer, want, wantAndOfferInfo[0], wantAndOfferInfo[1]);
 
         for (uint256 i; i < users.length;) {
             AtomicRequest storage request = intermediateUserKey[users[i]];
@@ -323,5 +325,16 @@ contract AtomicQueue is ReentrancyGuard {
         returns (uint256)
     {
         return atomicPrice.mulDivDown(offerAmount, 10 ** offerDecimals);
+    }
+
+    function _wantAndOfferInfoHelper(bytes calldata runData)
+        internal
+        pure
+        returns (uint256[3] memory wantAndOfferInfo)
+    {
+        // decode runData
+        (, , , , , uint256 priceLimit) = abi.decode(runData, (AtomicSolverV4.SolveType, address, uint256, uint256, address, uint256));
+
+        wantAndOfferInfo[2] = priceLimit;
     }
 }
