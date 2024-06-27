@@ -8,7 +8,7 @@ import { stdJson as StdJson } from "forge-std/StdJson.sol";
 contract DeployIonBoringVaultScript is BaseScript {
     using StdJson for string;
 
-    string path = "./deployment-config/01_DeployIonBoringVault.json";
+    string path = "./deployment-config/01_DeployBoringVault.json";
     string config = vm.readFile(path);
 
     bytes32 boringVaultSalt = config.readBytes32(".boringVaultSalt");
