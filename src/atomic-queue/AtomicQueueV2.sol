@@ -19,9 +19,9 @@ import {AtomicSolverV4} from "./AtomicSolverV4.sol";
  *         If this is done it is important that the user has approved the queue to spend the
  *         total amount of assets aggregated from all their requests, and to also have enough
  *         `offer` asset to cover the aggregate total request of `offerAmount`.
- * @author crispymangoes
+ * @author jpick713
  */
-contract AtomicQueue is ReentrancyGuard {
+contract AtomicQueueV2 is ReentrancyGuard {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
