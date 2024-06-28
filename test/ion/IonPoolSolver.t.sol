@@ -178,8 +178,22 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
         assertEq(requests[1].atomicPrice, 10**18, "request 2 atomic price");
         assertEq(requests[2].atomicPrice, 2 * 10**18, "request 3 atomic price");
 
+        bool isValidRequest = atomicQueue.isAtomicRequestValid(ERC20(boringVault), users[0], requests[0]);
+
+        console2.log("isValidRequest", isValidRequest);
+
+        uint256 ONE_SHARE = 10**18;
+
+        uint256 maxPriceAllowed = accountant.getRateInQuoteSafe(WSTETH);
+
+        console2.log("maxPriceAllowed", maxPriceAllowed);
+
+        console2.log("user0 addr", users[0]);
+        console2.log("user1 addr", users[1]);
+        console2.log("user2 addr", users[2]);
+
         vm.startPrank(SOLVER_OWNER);
-        vm.expectRevert(AtomicQueueV2.AtomicQueueV2__PriceTooHigh.selector);
+        vm.expectRevert(abi.encodeWithSelector(AtomicQueueV2.AtomicQueueV2__PriceTooHigh.selector, users[1], requests[1].atomicPrice, maxPriceAllowed));
         // queue, vault, want, users, min want asset (slippage param), maxAssets (cumsum of atomicPrice and offerAmounts), teller
         atomicSolver.redeemSolve(atomicQueue, ERC20(boringVault), ERC20(WSTETH), users, 10**18, 3*10**18, teller);
         vm.stopPrank();

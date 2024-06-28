@@ -11,6 +11,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {console2} from "forge-std/console2.sol";
 
 
 /**
@@ -83,13 +84,13 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         TellerWithMultiAssetSupport teller
     ) external requiresAuth {
         AccountantWithRateProviders accountant = teller.accountant();
-        uint256 rateToCheck = accountant.getRateInQuoteSafe(want);
-        if (rateToCheck == 0) {
+        uint256 priceToCheckAtomicPrice = accountant.getRateInQuoteSafe(want);
+        if (priceToCheckAtomicPrice == 0) {
             revert AtomicSolverV4___FailedToSolve();
         }
-        uint8 offerDecimals = offer.decimals(); // will be vault decimals if offer is vault (if it is not vault will revert later)
-        uint256 OneShare = 10**offerDecimals;
-        uint256 priceToCheckAtomicPrice = OneShare.mulDivDown(OneShare,rateToCheck);
+
+        console2.log("priceToCheckAtomicPrice in contract", priceToCheckAtomicPrice);
+        
         bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller, priceToCheckAtomicPrice);
 
         // Solve for `users`.

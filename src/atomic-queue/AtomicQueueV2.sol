@@ -7,6 +7,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IAtomicSolver} from "./IAtomicSolver.sol";
 import {AtomicSolverV4} from "./AtomicSolverV4.sol";
+import {console2} from "forge-std/console2.sol";
 
 /**
  * @title AtomicQueueV2
@@ -205,6 +206,10 @@ contract AtomicQueueV2 is ReentrancyGuard {
         for (uint256 i; i < users.length;) {
             AtomicRequest storage request = intermediateUserKey[users[i]];
 
+            console2.log("user: %s", users[i]);
+            console2.log("request.offerAmount: %s", request.offerAmount);
+            console2.log("request.atomicPrice: %s", request.atomicPrice);
+
             if (request.inSolve) revert AtomicQueueV2__UserRepeated(users[i]);
             if (block.timestamp > request.deadline) revert AtomicQueueV2__RequestDeadlineExceeded(users[i]);
             if (request.offerAmount == 0) revert AtomicQueueV2__ZeroOfferAmount(users[i]);
@@ -220,6 +225,7 @@ contract AtomicQueueV2 is ReentrancyGuard {
             request.inSolve = true;
             {
             // Transfer shares from user to solver.
+            console2.log("transfering %s from %s to %s", request.offerAmount, users[i], solver);
             offer.safeTransferFrom(users[i], solver, request.offerAmount);}
             unchecked {
                 ++i;
