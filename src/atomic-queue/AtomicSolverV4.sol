@@ -11,7 +11,6 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
-import {console2} from "forge-std/console2.sol";
 
 
 /**
@@ -88,8 +87,6 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         if (priceToCheckAtomicPrice == 0) {
             revert AtomicSolverV4___FailedToSolve();
         }
-
-        console2.log("priceToCheckAtomicPrice in contract", priceToCheckAtomicPrice);
         
         bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller, priceToCheckAtomicPrice);
 

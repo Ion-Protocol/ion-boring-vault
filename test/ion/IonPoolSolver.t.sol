@@ -44,7 +44,7 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
             new EthPerWstEthRateProvider(address(ETH_PER_STETH_CHAINLINK), address(WSTETH_ADDRESS), 1 days);
         bool isPeggedToBase = false;
 
-        atomicSolver = new AtomicSolverV4(SOLVER_OWNER, Authority(address(0)));
+        atomicSolver = new AtomicSolverV4(SOLVER_OWNER, Authority(rolesAuthority));
 
         atomicQueue = new AtomicQueueV2();
 
@@ -94,15 +94,11 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
         uint256 basePerQuote = ethPerWstEthRateProvider.getRate(); // base / quote
         uint256 quotePerShare = accountant.getRateInQuoteSafe(WSTETH); // quote / share
 
-        console2.log("base Per Quote", basePerQuote);
-
         uint256 basePerShare = accountant.getRate();
         uint256 expectedQuotePerShare = basePerShare * 1e18 / basePerQuote; // (base / share) / (base / quote) = quote / share
 
         uint256 shares = depositAmt.mulDivDown(1e18, quotePerShare);
         // mint amount = deposit amount * exchangeRate
-
-        console2.log("shares", shares);
 
         deal(address(WSTETH), address(this), depositAmt);
         teller.deposit(WSTETH, depositAmt, minimumMint);
@@ -156,15 +152,15 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
             inSolve: false
         });
 
-        vm.prank(users[0]);
+        vm.startPrank(users[0]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request1);
         ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
-        vm.prank(users[1]);
+        vm.startPrank(users[1]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request2);
         ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
-        vm.prank(users[2]);
+        vm.startPrank(users[2]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request3);
         ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
@@ -180,23 +176,66 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
 
         bool isValidRequest = atomicQueue.isAtomicRequestValid(ERC20(boringVault), users[0], requests[0]);
 
-        console2.log("isValidRequest", isValidRequest);
+        assertEq(isValidRequest, true, "request 1 is valid");
+
+        isValidRequest = atomicQueue.isAtomicRequestValid(ERC20(boringVault), users[1], requests[1]);
+
+        assertEq(isValidRequest, true, "request 2 is valid");
+
+        isValidRequest = atomicQueue.isAtomicRequestValid(ERC20(boringVault), users[2], requests[2]);
+
+        assertEq(isValidRequest, true, "request 3 is valid");
 
         uint256 ONE_SHARE = 10**18;
 
         uint256 maxPriceAllowed = accountant.getRateInQuoteSafe(WSTETH);
-
-        console2.log("maxPriceAllowed", maxPriceAllowed);
-
-        console2.log("user0 addr", users[0]);
-        console2.log("user1 addr", users[1]);
-        console2.log("user2 addr", users[2]);
 
         vm.startPrank(SOLVER_OWNER);
         vm.expectRevert(abi.encodeWithSelector(AtomicQueueV2.AtomicQueueV2__PriceTooHigh.selector, users[1], requests[1].atomicPrice, maxPriceAllowed));
         // queue, vault, want, users, min want asset (slippage param), maxAssets (cumsum of atomicPrice and offerAmounts), teller
         atomicSolver.redeemSolve(atomicQueue, ERC20(boringVault), ERC20(WSTETH), users, 10**18, 3*10**18, teller);
         vm.stopPrank();
+
+        AtomicQueueV2.AtomicRequest memory newRequest2 = AtomicQueueV2.AtomicRequest({
+            deadline: 2**32,
+            atomicPrice: 8*10**17,//0.8
+            offerAmount: 10**18,//1 share
+            inSolve: false
+        });
+
+        vm.prank(users[1]);
+        atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), newRequest2);
+
+        requests[1] = atomicQueue.getUserAtomicRequest(users[1], ERC20(boringVault), ERC20(WSTETH));
+
+        assertEq(requests[1].atomicPrice, 8*10**17, "request 2 atomic price");
+
+        address[] memory validUsers = new address[](2);
+
+        validUsers[0] = users[0];
+        validUsers[1] = users[1];
+
+        uint256 solverBalancePre = WSTETH.balanceOf(address(SOLVER_OWNER));
+
+        vm.startPrank(SOLVER_OWNER);
+        ERC20(WSTETH).approve(address(atomicSolver), type(uint256).max);
+        // queue, vault, want, users, min want asset (slippage param), maxAssets (cumsum of atomicPrice and offerAmounts), teller
+        atomicSolver.redeemSolve(atomicQueue, ERC20(boringVault), ERC20(WSTETH), validUsers, 10**18, 3*10**18, teller);
+        vm.stopPrank();
+        
+        // only one share requested, so should have only exactly atomic price as balance
+        assertEq(WSTETH.balanceOf(validUsers[0]), request1.atomicPrice, "WSTETH transferred to user");
+        assertEq(WSTETH.balanceOf(validUsers[1]), newRequest2.atomicPrice, "WSTETH transferred to user");
+
+        requests[0] = atomicQueue.getUserAtomicRequest(users[0], ERC20(boringVault), ERC20(WSTETH));
+        requests[1] = atomicQueue.getUserAtomicRequest(users[1], ERC20(boringVault), ERC20(WSTETH));
+
+        assertEq(requests[0].offerAmount, 0, "reset offer amount");
+        assertEq(requests[1].offerAmount, 0, "reset offer amount");
+
+        uint256 solverBalancePost = WSTETH.balanceOf(address(SOLVER_OWNER));
+
+        assertGt(solverBalancePost, solverBalancePre, "solver balance increased");
     }
 
 }
