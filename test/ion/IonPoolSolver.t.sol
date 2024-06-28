@@ -158,12 +158,15 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
 
         vm.prank(users[0]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request1);
+        ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
         vm.prank(users[1]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request2);
+        ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
         vm.prank(users[2]);
         atomicQueue.updateAtomicRequest(ERC20(boringVault), ERC20(WSTETH), request3);
+        ERC20(boringVault).approve(address(atomicQueue), type(uint256).max);
         vm.stopPrank();
 
         AtomicQueueV2.AtomicRequest[] memory requests = new AtomicQueueV2.AtomicRequest[](3);
@@ -174,6 +177,12 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
         assertEq(requests[0].atomicPrice, 10**17, "request 1 atomic price");
         assertEq(requests[1].atomicPrice, 10**18, "request 2 atomic price");
         assertEq(requests[2].atomicPrice, 2 * 10**18, "request 3 atomic price");
+
+        vm.startPrank(SOLVER_OWNER);
+        vm.expectRevert(AtomicQueueV2__PriceTooHigh.selector, "AtomicQueueV2: PriceTooHigh");
+        // queue, vault, want, users, min want asset (slippage param), maxAssets (cumsum of atomicPrice and offerAmounts), teller
+        atomicSolver.redeemSolve(atomicQueue, ERC20(boringVault), ERC20(WSTETH), users, 10**18, 3*10**18, teller);
+        vm.stopPrank();
     }
 
 }

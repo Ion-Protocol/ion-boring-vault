@@ -71,12 +71,12 @@ contract AtomicQueueV2 is ReentrancyGuard {
 
     //============================== ERRORS ===============================
 
-    error AtomicQueue__UserRepeated(address user);
-    error AtomicQueue__RequestDeadlineExceeded(address user);
-    error AtomicQueue__UserNotInSolve(address user);
-    error AtomicQueue__ZeroOfferAmount(address user);
-    error AtomicQueue__PriceTooHigh(address user, uint256 atomicPrice, uint256 priceToCheck);
-
+    error AtomicQueueV2__UserRepeated(address user);
+    error AtomicQueueV2__RequestDeadlineExceeded(address user);
+    error AtomicQueueV2__UserNotInSolve(address user);
+    error AtomicQueueV2__ZeroOfferAmount(address user);
+    error AtomicQueueV2__PriceTooHigh(address user, uint256 atomicPrice, uint256 priceToCheck);
+V2
     //============================== EVENTS ===============================
 
     /**
@@ -206,12 +206,12 @@ contract AtomicQueueV2 is ReentrancyGuard {
         for (uint256 i; i < users.length;) {
             AtomicRequest storage request = intermediateUserKey[users[i]];
 
-            if (request.inSolve) revert AtomicQueue__UserRepeated(users[i]);
-            if (block.timestamp > request.deadline) revert AtomicQueue__RequestDeadlineExceeded(users[i]);
-            if (request.offerAmount == 0) revert AtomicQueue__ZeroOfferAmount(users[i]);
-            if(request.atomicPrice > wantAndOfferInfo[2]) revert AtomicQueue__PriceTooHigh(users[i], request.atomicPrice, wantAndOfferInfo[2]);
-            // todo: think about instead of still passing in request.atomicPrice, could pass in priceToCheck for every user (leave no excess for solver)
-            // still have DoS/griefing vector even if you skip by price, since you can still front run requests with high offer amounts or pull your approval/balance
+            if (request.inSolve) revert AtomicQueueV2__UserRepeated(users[i]);
+            if (block.timestamp > request.deadline) revert AtomicQueueV2__RequestDeadlineExceeded(users[i]);
+            if (request.offerAmount == 0) revert AtomicQueueV2__ZeroOfferAmount(users[i]);
+            if(request.atomicPrice > wantAndOfferInfo[2]) revert AtomicQueueV2__PriceTooHigh(users[i], request.atomicPrice, wantAndOfferInfo[2]);
+            // still have DoS/griefing vector even if we skip instead of revert by price,
+            // since users can still front run requests with high offer amounts or draw down their approval/balance
 
             // User gets whatever their atomic price * offerAmount is.
             wantAndOfferInfo[1] += _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
@@ -248,7 +248,7 @@ contract AtomicQueueV2 is ReentrancyGuard {
                 request.offerAmount = 0;
                 request.inSolve = false;
             } else {
-                revert AtomicQueue__UserNotInSolve(users[i]);
+                revert AtomicQueueV2__UserNotInSolve(users[i]);
             }
             unchecked {
                 ++i;
