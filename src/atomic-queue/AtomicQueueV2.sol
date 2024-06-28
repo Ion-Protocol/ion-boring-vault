@@ -76,7 +76,6 @@ contract AtomicQueueV2 is ReentrancyGuard {
     error AtomicQueueV2__UserNotInSolve(address user);
     error AtomicQueueV2__ZeroOfferAmount(address user);
     error AtomicQueueV2__PriceTooHigh(address user, uint256 atomicPrice, uint256 priceToCheck);
-V2
     //============================== EVENTS ===============================
 
     /**
