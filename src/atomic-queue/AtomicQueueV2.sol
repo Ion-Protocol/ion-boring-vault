@@ -9,7 +9,7 @@ import {IAtomicSolver} from "./IAtomicSolver.sol";
 import {AtomicSolverV4} from "./AtomicSolverV4.sol";
 
 /**
- * @title AtomicQueue
+ * @title AtomicQueueV2
  * @notice Allows users to create `AtomicRequests` that specify an ERC20 asset to `offer`
  *         and an ERC20 asset to `want` in return.
  * @notice Making atomic requests where the exchange rate between offer and want is not

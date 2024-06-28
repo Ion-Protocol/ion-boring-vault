@@ -179,7 +179,7 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
         assertEq(requests[2].atomicPrice, 2 * 10**18, "request 3 atomic price");
 
         vm.startPrank(SOLVER_OWNER);
-        vm.expectRevert(AtomicQueueV2__PriceTooHigh.selector, "AtomicQueueV2: PriceTooHigh");
+        vm.expectRevert(AtomicQueueV2.AtomicQueueV2__PriceTooHigh.selector);
         // queue, vault, want, users, min want asset (slippage param), maxAssets (cumsum of atomicPrice and offerAmounts), teller
         atomicSolver.redeemSolve(atomicQueue, ERC20(boringVault), ERC20(WSTETH), users, 10**18, 3*10**18, teller);
         vm.stopPrank();

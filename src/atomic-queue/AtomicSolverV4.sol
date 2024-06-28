@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {AtomicQueue, ERC20, SafeTransferLib} from "./AtomicQueue.sol";
+import {AtomicQueueV2} from "./AtomicQueueV2.sol";
 import {IAtomicSolver} from "./IAtomicSolver.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {IWEETH} from "src/interfaces/IStaking.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 
@@ -54,7 +56,7 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
      * @dev Solver should approve this contract to spend share.asset().
      */
     function p2pSolve(
-        AtomicQueue queue,
+        AtomicQueueV2 queue,
         ERC20 offer,
         ERC20 want,
         address[] calldata users,
@@ -72,7 +74,7 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
      * @dev `offer` MUST be an ERC4626 vault.
      */
     function redeemSolve(
-        AtomicQueue queue,
+        AtomicQueueV2 queue,
         ERC20 offer,
         ERC20 want,
         address[] calldata users,
