@@ -10,6 +10,3 @@
 [submodule "lib/ion-protocol"]
 	path = lib/ion-protocol
 	url = https://github.com/Ion-Protocol/ion-protocol
-[submodule "lib/multicall"]
-	path = lib/multicall
-	url = https://github.com/mds1/multicall

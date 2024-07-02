@@ -11,6 +11,7 @@ import {TellerWithMultiAssetSupport} from "./../../src/base/Roles/TellerWithMult
 import {AtomicSolverV4} from "./../../src/atomic-queue/AtomicSolverV4.sol";
 import {AtomicQueueV2} from "./../../src/atomic-queue/AtomicQueueV2.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {StdUtils, IMulticall3} from "forge-std/StdUtils.sol";
 
 import {console2} from "forge-std/console2.sol";
 
@@ -186,7 +187,26 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
 
         assertEq(isValidRequest, true, "request 3 is valid");
 
-        uint256 ONE_SHARE = 10**18;
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](3);
+        calls[0] = IMulticall3.Call({
+            target: address(atomicQueue),
+            callData: abi.encodeWithSelector(AtomicQueueV2.isAtomicRequestValid.selector, ERC20(boringVault), users[0], requests[0])
+        });
+        calls[1] = IMulticall3.Call({
+            target: address(atomicQueue),
+            callData: abi.encodeWithSelector(AtomicQueueV2.isAtomicRequestValid.selector, ERC20(boringVault), users[1], requests[1])
+        });
+        calls[2] = IMulticall3.Call({
+            target: address(atomicQueue),
+            callData: abi.encodeWithSelector(AtomicQueueV2.isAtomicRequestValid.selector, ERC20(boringVault), users[2], requests[2])
+        });
+
+        IMulticall3 multicall = IMulticall3(0xcA11bde05977b3631167028862bE2a173976CA11);
+        IMulticall3.Result[] memory results = multicall.tryAggregate(false, calls);
+
+        assertEq(abi.decode(results[0].returnData, (bool)), true, "request 1 is valid");
+        assertEq(abi.decode(results[1].returnData, (bool)), true, "request 2 is valid");
+        assertEq(abi.decode(results[2].returnData, (bool)), true, "request 3 is valid");
 
         uint256 maxPriceAllowed = accountant.getRateInQuoteSafe(WSTETH);
 
