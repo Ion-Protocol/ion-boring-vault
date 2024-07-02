@@ -45,9 +45,13 @@ contract IonPoolSolverTest is IonPoolSharedSetup {
             new EthPerWstEthRateProvider(address(ETH_PER_STETH_CHAINLINK), address(WSTETH_ADDRESS), 1 days);
         bool isPeggedToBase = false;
 
-        atomicSolver = new AtomicSolverV4(SOLVER_OWNER, Authority(rolesAuthority));
+        atomicSolver = new AtomicSolverV4(SOLVER_OWNER);
 
         atomicQueue = new AtomicQueueV2();
+
+        vm.prank(SOLVER_OWNER);
+        atomicSolver.setAuthority(rolesAuthority);
+        vm.stopPrank();
 
         rolesAuthority.setRoleCapability(
             SOLVER_ROLE,

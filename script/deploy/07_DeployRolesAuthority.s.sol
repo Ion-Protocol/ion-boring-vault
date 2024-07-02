@@ -16,7 +16,7 @@ import {stdJson as StdJson} from "forge-std/StdJson.sol";
 contract DeployRolesAuthority is BaseScript {
     using StdJson for string;
 
-    string path = "./deployment-config/05_DeployRolesAuthority.json";
+    string path = "./deployment-config/07_DeployRolesAuthority.json";
     string config = vm.readFile(path);
 
     bytes32 rolesAuthoritySalt = config.readBytes32(".rolesAuthoritySalt");
@@ -27,11 +27,15 @@ contract DeployRolesAuthority is BaseScript {
     address accountant = config.readAddress(".accountant");
     address strategist = config.readAddress(".strategist");
     address exchangeRateBot = config.readAddress(".exchangeRateBot");
+    address solverBot = config.readAddress(".solverBot");
 
     uint8 public constant STRATEGIST_ROLE = 1;
     uint8 public constant MANAGER_ROLE = 2;
     uint8 public constant TELLER_ROLE = 3;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 4;
+    uint8 public constant SOLVER_ROLE = 5;
+    uint8 public constant QUEUE_ROLE = 6;
+    uint8 public constant SOLVER_CALLER_ROLE = 7;
 
     function run() public broadcast returns (RolesAuthority rolesAuthority) {
         require(boringVault.code.length != 0, "boringVault must have code");

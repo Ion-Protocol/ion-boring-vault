@@ -48,7 +48,7 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
+    constructor(address _owner) Auth(_owner, Authority(address(0))) {}
 
     //============================== SOLVE FUNCTIONS ===============================
     /**

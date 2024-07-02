@@ -13,7 +13,7 @@ import {stdJson as StdJson} from "forge-std/StdJson.sol";
 contract DeployRateProviders is BaseScript {
     using StdJson for string;
 
-    string path = "./deployment-config/08_DeployRateProviders.json";
+    string path = "./deployment-config/10_DeployRateProviders.json";
     string config = vm.readFile(path);
 
     uint256 maxTimeFromLastUpdate = config.readUint(".maxTimeFromLastUpdate");

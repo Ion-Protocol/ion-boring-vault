@@ -8,7 +8,7 @@ import {stdJson as StdJson} from "forge-std/StdJson.sol";
 contract DeployDecoderAndSanitizer is BaseScript {
     using StdJson for string;
 
-    string path = "./deployment-config/07_DeployDecoderAndSanitizer.json";
+    string path = "./deployment-config/09_DeployDecoderAndSanitizer.json";
     string config = vm.readFile(path);
 
     bytes32 decoderSalt = config.readBytes32(".decoderSalt");    

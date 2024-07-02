@@ -17,7 +17,7 @@ interface IAuthority {
 contract SetAuthorityAndTransferOwnerships is BaseScript {
     using StdJson for string;
 
-    string path = "./deployment-config/06_SetAuthorityAndTransferOwnerships.json";
+    string path = "./deployment-config/08_SetAuthorityAndTransferOwnerships.json";
     string config = vm.readFile(path);
 
     IAuthority boringVault = IAuthority(config.readAddress(".boringVault"));
