@@ -7,6 +7,7 @@ import {BoringVault} from "./../../src/base/BoringVault.sol";
 import {TellerWithMultiAssetSupport} from "./../../src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "./../../src/base/Roles/AccountantWithRateProviders.sol";
 import {BaseScript} from "../Base.s.sol";
+import {AtomicSolverV4} from "./../../src/atomic-queue/AtomicSolverV4.sol";
 
 import {stdJson as StdJson} from "forge-std/StdJson.sol";
 
