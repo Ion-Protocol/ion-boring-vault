@@ -9,7 +9,7 @@ import {stdJson as StdJson} from "forge-std/StdJson.sol";
 contract DeployAtomicSolverV4 is BaseScript, MainnetAddresses {
     using StdJson for string;
 
-    string path = "./deployment-config/06_AtomicSolverV4.json";
+    string path = "./deployment-config/06_DeployAtomicSolverV4.json";
     string config = vm.readFile(path);
 
     bytes32 solverSalt = config.readBytes32(".solverSalt");
