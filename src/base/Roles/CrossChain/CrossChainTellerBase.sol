@@ -15,7 +15,6 @@ abstract contract CrossChainTellerBase is ICrossChainTeller, TellerWithMultiAsse
     constructor(address _owner, address _vault, address _accountant, address _weth)
         TellerWithMultiAssetSupport(_owner, _vault, _accountant, _weth)
     {
-
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
@@ -190,6 +189,14 @@ abstract contract CrossChainTellerBase is ICrossChainTeller, TellerWithMultiAsse
      */
     function _afterBridge(uint256 shareAmount, BridgeData calldata data, bytes32 messageId) internal virtual{
         emit MessageSent(messageId, shareAmount, data.destinationChainReceiver);
+    }
+
+    /**
+     * @notice to execute before receive logic to check the source selector and revert if it's not approved
+     * @param sourceSelector the selector the message is being received from
+     */
+    function _beforeReceiveCheckSourceSelector(uint32 sourceSelector) internal {
+        if(!selectorToChains[sourceSelector].allowMessagesFrom) revert CrossChainTellerBase_MessagesNotAllowedFrom(sourceSelector);
     }
 
 }

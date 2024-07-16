@@ -57,6 +57,7 @@ contract CrossChainLayerZeroTellerWithMultiAssetSupport is CrossChainTellerBase,
         address,  // Executor address as specified by the OApp.
         bytes calldata  // Any extra data or options to trigger on receipt.
     ) internal override {
+        _beforeReceiveCheckSourceSelector(_origin.srcEid);
         // Decode the payload to get the message
         (uint256 shareAmount, address receiver) = abi.decode(payload, (uint256,address));
         vault.enter(address(0), ERC20(address(0)), 0, receiver, shareAmount);

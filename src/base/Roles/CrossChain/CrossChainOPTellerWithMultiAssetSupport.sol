@@ -21,7 +21,7 @@ interface ICrossDomainMessenger {
  */
 contract CrossChainOPTellerWithMultiAssetSupport is CrossChainTellerBase {
 
-    ICrossDomainMessenger public messenger;
+    ICrossDomainMessenger public immutable messenger;
     address public peer;
 
     error CrossChainOPTellerWithMultiAssetSupport_OnlyMessenger();
@@ -65,12 +65,13 @@ contract CrossChainOPTellerWithMultiAssetSupport is CrossChainTellerBase {
     }
 
     /**
+     * @dev considering there is an immutable messenger that only messenges 1 chain, and that messenger cannot return it's peer's ID,
+     * We skip the check for if messages are  allowed from here
      * @notice Function for OP Messenger to call to receive a message and mint the shares on this chain
      * @param receiver to receive the shares
      * @param shareMintAmount amount of shares to mint
      */
     function receiveBridgeMessage(address receiver, uint256 shareMintAmount) external{
-
         if(msg.sender != address(messenger)){
             revert CrossChainOPTellerWithMultiAssetSupport_OnlyMessenger();
         }
