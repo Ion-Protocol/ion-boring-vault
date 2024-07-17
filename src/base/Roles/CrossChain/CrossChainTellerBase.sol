@@ -128,7 +128,7 @@ abstract contract CrossChainTellerBase is ICrossChainTeller, TellerWithMultiAsse
      * @param minimumMint minimum required shares to receive
      * @param data Bridge Data
      */
-    function depositAndBridge(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, BridgeData calldata data) external payable requiresAuth{
+    function depositAndBridge(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, BridgeData calldata data) external payable requiresAuth nonReentrant{
         uint shareAmount = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
         bridge(shareAmount, data);
     }
