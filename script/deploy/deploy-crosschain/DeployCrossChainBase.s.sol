@@ -21,7 +21,7 @@ import {ETH_PER_STETH_CHAINLINK, WSTETH_ADDRESS} from "@ion-protocol/Constants.s
 import {IRateProvider} from "../../../src/interfaces/IRateProvider.sol";
 import {RolesAuthority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
-
+import {CrossChainTellerBase} from "src/base/Roles/CrossChain/CrossChainTellerBase.sol";
 
 struct AccountantConfig{
         bytes32 accountantSalt;
@@ -56,6 +56,11 @@ abstract contract DeployCrossChainBase is BaseScript, MainnetAddresses {
     uint8 public constant TELLER_ROLE = 3;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 4;
 
+    BoringVault boringVault;
+    ManagerWithMerkleVerification manager;
+    AccountantWithRateProviders accountant;
+    RolesAuthority rolesAuthority;
+
     mapping(string => mapping(string => address)) public addressesByRpc;
 
     modifier broadcastChain(string memory rpc) {
@@ -67,19 +72,19 @@ abstract contract DeployCrossChainBase is BaseScript, MainnetAddresses {
 
     function fullDeployForChainOP(string memory rpc, address messenger) internal returns(CrossChainOPTellerWithMultiAssetSupport teller){
         // 01 ===========================================================================================================================================
-        BoringVault boringVault = _deployBoringVault();
+        boringVault = _deployBoringVault();
 
         // 02 ===========================================================================================================================================
-        ManagerWithMerkleVerification manager = _deployManager(boringVault);
+        manager = _deployManager(boringVault);
 
         // 03 ===========================================================================================================================================
-        AccountantWithRateProviders accountant = _deployAccountant(boringVault, rpc);
+        accountant = _deployAccountant(boringVault, rpc);
         
         // 04 ===========================================================================================================================================
         teller = _deployTellerOP(boringVault, accountant, messenger, rpc);        
 
         // 05 ===========================================================================================================================================
-        RolesAuthority rolesAuthority = _deployRolesAuthority(boringVault, manager, teller, accountant);
+        rolesAuthority = _deployRolesAuthority(boringVault, manager, teller, accountant);
 
         // 06 ===========================================================================================================================================
         {        
@@ -481,6 +486,8 @@ abstract contract DeployCrossChainBase is BaseScript, MainnetAddresses {
         rolesAuthority.setRoleCapability(TELLER_ROLE, address(boringVault), BoringVault.exit.selector, true);
 
         rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+        rolesAuthority.setPublicCapability(address(teller), CrossChainTellerBase.bridge.selector, true);
+        rolesAuthority.setPublicCapability(address(teller), CrossChainTellerBase.depositAndBridge.selector, true);
 
         rolesAuthority.setRoleCapability(
             UPDATE_EXCHANGE_RATE_ROLE, address(accountant), AccountantWithRateProviders.updateExchangeRate.selector, true

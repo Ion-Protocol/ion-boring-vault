@@ -40,8 +40,7 @@ abstract contract CrossChainBaseTest is Test, MainnetAddresses {
     CrossChainTellerBase sourceTeller;
     CrossChainTellerBase destinationTeller;
 
-    function _deploySourceAndDestinationTeller() internal virtual{
-    }
+    function _deploySourceAndDestinationTeller() internal virtual {}
 
     function setUp() public virtual{
         // Setup forked environment.
@@ -54,10 +53,11 @@ abstract contract CrossChainBaseTest is Test, MainnetAddresses {
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
         );
+    
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+
 
         _deploySourceAndDestinationTeller();
-
-        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
 
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
@@ -93,6 +93,11 @@ abstract contract CrossChainBaseTest is Test, MainnetAddresses {
         rolesAuthority.setPublicCapability(
             address(destinationTeller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
         );
+
+        rolesAuthority.setPublicCapability(address(sourceTeller), CrossChainTellerBase.bridge.selector, true);
+        rolesAuthority.setPublicCapability(address(destinationTeller), CrossChainTellerBase.bridge.selector, true);
+        rolesAuthority.setPublicCapability(address(sourceTeller), CrossChainTellerBase.depositAndBridge.selector, true);
+        rolesAuthority.setPublicCapability(address(destinationTeller), CrossChainTellerBase.depositAndBridge.selector, true);
 
         rolesAuthority.setUserRole(address(sourceTeller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(sourceTeller), BURNER_ROLE, true);

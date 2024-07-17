@@ -65,15 +65,13 @@ contract CrossChainOPTellerWithMultiAssetSupport is CrossChainTellerBase {
     }
 
     /**
+     * @dev it's recommended that this function uses a check that msg.sender == messenger by OP, however, to keep with stanadard we are instead 
+     * using Auth to set the messenger as the only accepted caller of this function
      * @notice Function for OP Messenger to call to receive a message and mint the shares on this chain
      * @param receiver to receive the shares
      * @param shareMintAmount amount of shares to mint
      */
-    function receiveBridgeMessage(address receiver, uint256 shareMintAmount) external{
-
-        if(msg.sender != address(messenger)){
-            revert CrossChainOPTellerWithMultiAssetSupport_OnlyMessenger();
-        }
+    function receiveBridgeMessage(address receiver, uint256 shareMintAmount) external requiresAuth{
 
         if(messenger.xDomainMessageSender() != peer){
             revert CrossChainOPTellerWithMultiAssetSupport_OnlyPeerAsSender();
