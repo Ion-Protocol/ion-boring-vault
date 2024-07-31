@@ -18,8 +18,7 @@ abstract contract BaseScript is Script {
     string constant CONFIG_PATH_ROOT = "./deployment-config/";
     string constant CONFIG_CHAIN_ROOT = "./deployment-config/chains/";
 
-    /// Custom base params
-    ICreateX CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
+    ICreateX immutable CREATEX;
 
     /// @dev Included to enable compilation of the script without a $MNEMONIC environment variable.
     string internal constant TEST_MNEMONIC = "test test test test test test test test test test test junk";
@@ -57,6 +56,8 @@ abstract contract BaseScript is Script {
         }
         console2.log("broadcaster", broadcaster);
 
+        string memory chainConfig = getChainConfigFile();
+        CREATEX = ICreateX(chainConfig.readAddress(".createx")); 
         // if this chain doesn't have a CREATEX deployment, deploy it ourselves
         if (address(CREATEX).code.length == 0) {
             revert("CREATEX Not Deployed on this chain. Use the Library to forge deploy it");

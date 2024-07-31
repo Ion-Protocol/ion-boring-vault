@@ -3,23 +3,43 @@
   "balancerVault": "0xBA12222222228d8Ba445958a75a0704d566BF2C8",
   "opMessenger": "0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1",
   "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+  "createx": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
   "assetToRateProviderAndPriceFeed": {
     "NOTE_THESE_KEYS_MUST_NOT_BE_CHECKSUMMED": 0,
     "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee": {
-      "rateProvider": "0x0000000000000000000000000000000000000000",
       "priceFeed": "0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22",
-      "rateProvider": "0x0000000000000000000000000000000000000000",
+      "rateProvider": "0x51a9319b45f41c405efa1ecbcce530607a694862",
       "decimals": 18,
       "description": "weETH / ETH",
       "priceFeedType": 0
     },
     "0xbf5495efe5db9ce00f80364c8b423567e58d2110": {
-      "rateProvider": "0x0000000000000000000000000000000000000000",
       "priceFeed": "0x636A000262F6aA9e1F094ABF0aD8f645C44f641C",
-      "rateProvider": "0x0000000000000000000000000000000000000000",
+      "rateProvider": "0xb9b1ed92d3902ebeca23f931a629343d4c46c38d",
       "decimals": 18,
       "description": "ezETH / ETH",
       "priceFeedType": 0
+    },
+    "0xa1290d69c65a6fe4df752f95823fae25cb99e5a7": {
+      "priceFeed": "0x03c68933f7a3f76875c0bc670a58e69294cdfd01",
+      "rateProvider": "0xb140e881e206e94b18e143f1739d5f212c59c859",
+      "decimals": 18,
+      "description": "RSETH / ETH",
+      "priceFeedType": 0
+    },
+    "0xfae103dc9cf190ed75350761e95403b7b8afa6c0": {
+      "priceFeed": "0xb613cfebd0b6e95abdde02677d6bc42394fdb857",
+      "rateProvider": "0x4e323185c91ef73e36f0cd2dddce54fb33112949",
+      "decimals": 18,
+      "description": "rswETH / ETH",
+      "priceFeedType": 0
+    },
+    "0xd9a442856c234a39a81a089c06451ebaa4306a72": {
+      "priceFeed": "0x76a495b0bffb53ef3f0e94ef0763e03ce410835c",
+      "rateProvider": "0xee8259373fcf5dc12f511867551f7f6fa6fcb0fb",
+      "decimals": 18,
+      "description": "pufETH/ETH",
+      "priceFeedType": 1
     }
   }
 }

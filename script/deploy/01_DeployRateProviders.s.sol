@@ -25,6 +25,7 @@ contract DeployRateProviders is BaseScript {
 
         for (uint256 i; i < assets.length; ++i) {
             require(assets[i].code.length > 0, "asset must have code");
+            console.log("Deploying rate provider for: ", assets[i]);
             string memory rateProviderKey =
                 string(abi.encodePacked(".assetToRateProviderAndPriceFeed.", assets[i].toHexString(), ".rateProvider"));
             address rateProvider = chainConfig.readAddress(rateProviderKey);
@@ -52,6 +53,8 @@ contract DeployRateProviders is BaseScript {
                 );
                 rateProvider =
                     deployRateProvider(description, priceFeed, maxTimeFromLastUpdate, decimals, priceFeedType);
+
+                console.log("Successfully deployed: ", rateProvider);
                 string memory chainConfigFilePath =
                     string.concat(CONFIG_CHAIN_ROOT, Strings.toString(block.chainid), ".json");
                 rateProvider.toHexString().write(chainConfigFilePath, rateProviderKey);

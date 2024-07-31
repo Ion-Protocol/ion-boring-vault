@@ -42,7 +42,6 @@ library ConfigReader {
         bytes32 decoderSalt;
         address decoder;
         address rateProvider;
-        bytes32 rateProviderSalt;
         uint256 maxTimeFromLastUpdate;
         address[] assets;
         address[] rateProviders;
@@ -93,7 +92,6 @@ library ConfigReader {
 
         // Reading from the 'rateProvider' section
         config.rateProvider = _config.readAddress(".rateProvider.address");
-        config.rateProviderSalt = _config.readBytes32(".rateProvider.rateProviderSalt");
         config.maxTimeFromLastUpdate = uint32(_config.readUint(".rateProvider.maxTimeFromLastUpdate"));
 
         // Reading from the 'chainConfig' section
